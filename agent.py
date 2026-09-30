@@ -10,18 +10,18 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
     raise RuntimeError(
-        "GEMINI_API_KEY is missing."
+        "GEMINI_API_KEY is missing. "
+        "Add it to your local .env or Render Environment Variables."
     )
 
 client = genai.Client(
     api_key=GEMINI_API_KEY
 )
 
-# Primary + fallback models
+# Primary and fallback models
 MODELS = [
     "gemini-3.1-flash-lite",
-    "gemini-3.5-flash-lite",
-    "gemini-2.5-flash-lite"
+    "gemini-2.5-flash-lite",
 ]
 
 
@@ -30,19 +30,24 @@ def generate_answer(question):
     prompt = f"""
 You are StudyAgent AI.
 
-You help students with:
+You are an AI study assistant for students.
 
+Help with:
 - Python
 - Artificial Intelligence
 - Machine Learning
 - Programming
+- Coding
 - Projects
 - Exams
 - Interview preparation
+- Internship preparation
 - Technical concepts
-- Career and internship preparation
+- Career-related technical guidance
 
 Give simple, clear and useful answers.
+
+For calculations, provide the correct result with a short explanation.
 
 User Question:
 {question}
@@ -55,7 +60,7 @@ User Question:
             try:
 
                 print(
-                    f"Trying model: {model} "
+                    f"Trying Gemini model: {model} "
                     f"(attempt {attempt + 1})"
                 )
 
@@ -65,7 +70,7 @@ User Question:
                 )
 
                 if response and response.text:
-                    print(f"Success: {model}")
+                    print(f"Gemini success: {model}")
                     return response.text
 
             except Exception as e:
@@ -77,21 +82,21 @@ User Question:
                     f"{error_text}"
                 )
 
-                # Retry only temporary server errors
+                # Temporary Gemini overload
                 if "503" in error_text or "UNAVAILABLE" in error_text:
 
                     if attempt == 0:
-                        print("Temporary overload. Retrying...")
+                        print("Gemini temporarily busy. Retrying...")
                         time.sleep(3)
                         continue
 
                     print(
                         f"{model} unavailable. "
-                        "Trying next model..."
+                        "Trying fallback model..."
                     )
                     break
 
-                # Authentication / other errors
+                # Authentication or other permanent errors
                 raise
 
     return (
@@ -108,6 +113,7 @@ def run_agent(question):
         return "Please enter a question."
 
     try:
+
         return generate_answer(question)
 
     except Exception as e:
