@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyAgent AI</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#070a16;
+  --panel:#11162a;
+  --panel2:#0d1223;
+  --line:#273252;
+  --text:#f4f7ff;
+  --muted:#9ba8c7;
+  --accent:#5b78ff;
+  --accent2:#8c5cff;
+  --danger:#ff5f76;
+}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 15% 10%,#18275b 0,transparent 28%),
+    radial-gradient(circle at 90% 80%,#27174f 0,transparent 28%),
+    var(--bg);
+}
+.app{
+  width:min(1180px,94%);
+  margin:28px auto;
+  display:grid;
+  grid-template-columns:280px 1fr;
+  gap:18px;
+}
+.sidebar,.chat{
+  border:1px solid var(--line);
+  background:rgba(17,22,42,.88);
+  backdrop-filter:blur(18px);
+  border-radius:24px;
+  box-shadow:0 20px 70px rgba(0,0,0,.25);
+}
+.sidebar{padding:18px;min-height:760px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.logo{
+  width:46px;height:46px;border-radius:14px;
+  display:grid;place-items:center;font-size:24px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+}
+.brand h1{font-size:20px;margin:0}
+.brand p{font-size:12px;color:var(--muted);margin:3px 0 0}
+.search{
+  width:100%;padding:12px 13px;border-radius:13px;
+  border:1px solid var(--line);outline:none;
+  color:var(--text);background:#090e1d;
+}
+.history-title{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:18px 0 10px;
+}
+.history-title span{font-size:13px;color:var(--muted)}
+.clear-btn{
+  border:0;background:transparent;color:var(--danger);
+  cursor:pointer;font-size:12px;
+}
+.history-list{
+  height:590px;overflow:auto;padding-right:3px;
+}
+.history-item{
+  width:100%;text-align:left;border:1px solid transparent;
+  background:#0b1020;color:var(--text);padding:12px;
+  border-radius:13px;margin-bottom:8px;cursor:pointer;
+}
+.history-item:hover{border-color:#394978}
+.history-q{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:13px;font-weight:600;
+}
+.history-time{font-size:10px;color:var(--muted);margin-top:5px}
+.empty{font-size:12px;color:var(--muted);line-height:1.6}
+.chat{
+  min-height:760px;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.header{
+  padding:24px 28px 16px;border-bottom:1px solid var(--line);
+}
+.header h2{margin:0 0 5px;font-size:27px}
+.header p{margin:0;color:var(--muted)}
+.messages{
+  flex:1;padding:24px;overflow:auto;min-height:480px;
+}
+.message{
+  max-width:86%;padding:14px 16px;border-radius:17px;
+  margin-bottom:14px;line-height:1.6;font-size:14px;
+  white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.user{
+  margin-left:auto;
+  background:linear-gradient(135deg,#2b438e,#5140a0);
+}
+.bot{
+  background:#0b1020;border:1px solid var(--line);
+}
+.message code{
+  background:#070a14;padding:2px 5px;border-radius:5px;
+}
+.quick{
+  display:flex;gap:8px;flex-wrap:wrap;padding:0 24px 12px;
+}
+.quick button{
+  border:1px solid #4057a5;color:#dce3ff;background:#172348;
+  padding:8px 12px;border-radius:999px;cursor:pointer;
+}
+.composer{
+  padding:15px 20px 20px;border-top:1px solid var(--line);
+  display:flex;gap:10px;
+}
+.composer textarea{
+  flex:1;resize:none;height:52px;
+  background:#090e1d;border:1px solid var(--line);
+  border-radius:15px;color:var(--text);outline:none;
+  padding:14px;font:inherit;
+}
+.send{
+  width:90px;border:0;border-radius:15px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:white;font-weight:700;cursor:pointer;
+}
+.send:disabled{opacity:.55;cursor:not-allowed}
+.status{font-size:11px;color:var(--muted);padding:0 24px 12px}
+@media(max-width:850px){
+  .app{grid-template-columns:1fr}
+  .sidebar{min-height:auto}
+  .history-list{height:180px}
+  .chat{min-height:700px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">🤖</div>
+      <div>
+        <h1>StudyAgent AI</h1>
+        <p>Study • Code • Projects</p>
+      </div>
+    </div>
+
+    <input id="historySearch" class="search"
+           placeholder="🔎 Search history..." autocomplete="off">
+
+    <div class="history-title">
+      <span>Chat History</span>
+      <button class="clear-btn" onclick="clearHistory()">Clear all</button>
+    </div>
+
+    <div id="historyList" class="history-list"></div>
+  </aside>
+
+  <main class="chat">
+    <header class="header">
+      <h2>StudyAgent AI</h2>
+      <p>Your AI agent for study, coding, technical tasks and projects.</p>
+    </header>
+
+    <section id="messages" class="messages">
+      <div class="message bot">
+        👋 Hi! I’m StudyAgent AI.<br>
+        Ask me about Python, AI/ML, projects, exams, coding,
+        interviews or internships.
+      </div>
+    </section>
+
+    <div class="quick">
+      <button onclick="quickAsk('Explain Python functions with an example')">Python Functions</button>
+      <button onclick="quickAsk('Give me an AI project idea for a college hackathon')">Project Idea</button>
+      <button onclick="quickAsk('Calculate 125 * 24')">Calculator</button>
+      <button onclick="quickAsk('Give me 10 interview questions for a Python fresher')">Interview</button>
+    </div>
+
+    <div id="status" class="status">Ready</div>
+
+    <form class="composer" onsubmit="sendMessage(event)">
+      <textarea id="question" placeholder="Ask your question..."></textarea>
+      <button id="sendBtn" class="send" type="submit">Send</button>
+    </form>
+  </main>
+</div>
+
+<script>
+const STORAGE_KEY = "studyagent_chat_history_v1";
+
+const questionBox = document.getElementById("question");
+const messages = document.getElementById("messages");
+const historyList = document.getElementById("historyList");
+const historySearch = document.getElementById("historySearch");
+const sendBtn = document.getElementById("sendBtn");
+const statusBox = document.getElementById("status");
+
+let history = loadHistory();
+
+function loadHistory(){
+  try{
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  }catch{
+    return [];
+  }
+}
+
+function saveHistory(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+}
+
+function escapeHtml(text){
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function renderHistory(filter=""){
+  const q = filter.trim().toLowerCase();
+
+  const items = history.filter(item =>
+    item.question.toLowerCase().includes(q) ||
+    item.answer.toLowerCase().includes(q)
+  );
+
+  if(!items.length){
+    historyList.innerHTML =
+      `<div class="empty">No matching history.<br>Ask a question and it will appear here automatically.</div>`;
+    return;
+  }
+
+  historyList.innerHTML = items.map(item => `
+    <button class="history-item" onclick="openHistory('${item.id}')">
+      <div class="history-q">${escapeHtml(item.question)}</div>
+      <div class="history-time">${escapeHtml(item.time)}</div>
+    </button>
+  `).join("");
+}
+
+function openHistory(id){
+  const item = history.find(x => x.id === id);
+  if(!item) return;
+
+  messages.innerHTML = `
+    <div class="message user">${escapeHtml(item.question)}</div>
+    <div class="message bot">${escapeHtml(item.answer)}</div>
+  `;
+  statusBox.textContent = "Opened from history";
+}
+
+function addHistory(question, answer){
+  const item = {
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+    question,
+    answer,
+    time: new Date().toLocaleString()
+  };
+
+  history.unshift(item);
+  if(history.length > 100) history = history.slice(0,100);
+  saveHistory();
+  renderHistory(historySearch.value);
+}
+
+function clearHistory(){
+  if(!history.length) return;
+
+  if(confirm("Clear all chat history?")){
+    history = [];
+    saveHistory();
+    renderHistory();
+    statusBox.textContent = "History cleared";
+  }
+}
+
+function addMessage(text, type){
+  const div = document.createElement("div");
+  div.className = `message ${type}`;
+  div.textContent = text;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function quickAsk(text){
+  questionBox.value = text;
+  questionBox.focus();
+}
+
+async function sendMessage(event){
+  event.preventDefault();
+
+  const question = questionBox.value.trim();
+  if(!question) return;
+
+  addMessage(question, "user");
+  questionBox.value = "";
+  sendBtn.disabled = true;
+  statusBox.textContent = "StudyAgent is thinking...";
+
+  try{
+    const response = await fetch("/ask", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({question})
+    });
+
+    const data = await response.json();
+
+    if(!response.ok || !data.ok){
+      throw new Error(data.error || "Request failed");
+    }
+
+    addMessage(data.answer, "bot");
+    addHistory(question, data.answer);
+    statusBox.textContent = "Ready";
+  }catch(error){
+    addMessage("❌ " + error.message, "bot");
+    statusBox.textContent = "Error";
+  }finally{
+    sendBtn.disabled = false;
+    questionBox.focus();
+  }
+}
+
+questionBox.addEventListener("keydown", event => {
+  if(event.key === "Enter" && !event.shiftKey){
+    event.preventDefault();
+    document.querySelector(".composer").requestSubmit();
+  }
+});
+
+historySearch.addEventListener("input", () => {
+  renderHistory(historySearch.value);
+});
+
+renderHistory();
+</script>
+</body>
+</html>

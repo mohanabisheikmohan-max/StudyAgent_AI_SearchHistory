@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: studyagent-ai
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: AQ.Ab8RN6IRvv-o1na7JMDhlCJ_VkWY619hjWjD7kSW0pVd6iAAWQ
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.1-flash-lite
